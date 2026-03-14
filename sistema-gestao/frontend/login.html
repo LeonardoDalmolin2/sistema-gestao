@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Sistema de Gestão</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 50px; }
+        .caixa-login { border: 1px solid #ccc; padding: 20px; width: 300px; border-radius: 8px; }
+        input { display: block; width: 90%; margin-bottom: 10px; padding: 8px; }
+        button { padding: 10px; width: 100%; cursor: pointer; background: #007bff; color: white; border: none; }
+        #mensagem { margin-top: 15px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="caixa-login">
+        <h2>Entrar no Sistema</h2>
+        <form id="formLogin">
+            <input type="email" id="email" placeholder="E-mail" value="admin@email.com" required>
+            <input type="password" id="password" placeholder="Senha" value="123456" required>
+            <button type="submit">Fazer Login</button>
+        </form>
+        <div id="mensagem"></div>
+    </div>
+
+    <script>
+        $('#formLogin').on('submit', function(evento) {
+            
+            evento.preventDefault(); 
+
+            let emailDigitado = $('#email').val();
+            let senhaDigitada = $('#password').val();
+            let $mensagem = $('#mensagem');
+
+            $mensagem.text("Conectando com a API...").css("color", "black");
+
+            $.ajax({
+                url: 'http://127.0.0.1:8000/api/login', 
+                method: 'POST', 
+                contentType: 'application/json',
+                dataType: 'json',
+                data: JSON.stringify({
+                    email: emailDigitado,
+                    password: senhaDigitada
+                }),
+                
+                success: function(resposta) {
+                    $mensagem.text("Login com sucesso! Token guardado.");
+                    $mensagem.css("color", "green");
+
+                    localStorage.setItem('meu_token_vip', resposta.token);
+                    console.log("Olha o token aqui no console:", resposta.token);
+                },
+                
+                error: function(erro) {
+                    if (erro.status === 401) {
+                        $mensagem.text("Erro: E-mail ou senha incorretos.");
+                    } else {
+                        $mensagem.text("Erro ao conectar com a API. (Laravel tá rodando?)");
+                    }
+                    $mensagem.css("color", "red");
+                    console.error("Detalhe do erro:", erro);
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>
