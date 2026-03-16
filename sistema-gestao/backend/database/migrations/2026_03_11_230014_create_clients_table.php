@@ -11,16 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-    Schema::create('clients', function (Blueprint $table) {
-        $table->id();
-        // A chave estrangeira ligando o cliente ao usuário que o cadastrou
-        $table->foreignId('user_id')->constrained()->onDelete('cascade');
-        
-        $table->string('name', 100);
-        $table->string('email', 100);
-        $table->string('cellphone', 20); // 20 para evitar problemas com formatação
-        $table->timestamps();
-    });
+        Schema::create('clients', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->string('name');
+            $table->string('email')->unique();
+            $table->string('phone')->nullable(); // <-- ADICIONE ESTA LINHA AQUI!
+            $table->timestamps();
+        });
     }
 
     /**

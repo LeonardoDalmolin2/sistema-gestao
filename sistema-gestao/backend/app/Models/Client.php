@@ -13,6 +13,6 @@ class Client extends Model
         'user_id',
         'name',
         'email',
-        'cellphone'
+        'phone'
     ];
 }

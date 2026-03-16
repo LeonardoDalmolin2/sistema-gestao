@@ -16,8 +16,8 @@ class ClientController extends Controller
 
         $userId = Auth::id(); 
         
-        $clients = Client::where('user_id', $userId)->get();
-
+        $clients = \App\Models\Client::paginate(10);
+        
         return response()->json($clients, 200);
     }
 
@@ -29,7 +29,7 @@ class ClientController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:100',
             'email' => 'required|email|max:100',
-            'cellphone' => 'required|string|max:20'
+            'phone' => 'required|string|max:20'
         ]);
 
         $validated['user_id'] = Auth::id();
@@ -47,7 +47,8 @@ class ClientController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $client = \App\Models\Client::findOrFail($id);
+        return response()->json($client);
     }
 
     /**
@@ -68,7 +69,7 @@ class ClientController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:100',
             'email' => 'required|email|max:100',
-            'cellphone' => 'required|string|max:20'
+            'phone' => 'required|string|max:20'
         ]);
 
         $client->update($validated);

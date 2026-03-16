@@ -14,7 +14,6 @@ return new class extends Migration
     Schema::create('invoices', function (Blueprint $table) {
         $table->id();
         $table->foreignId('client_id')->constrained()->onDelete('cascade');
-        
         $table->decimal('amount', 10, 2);
         $table->enum('status', ['pending', 'paid', 'canceled'])->default('pending');
         $table->date('due_date');
