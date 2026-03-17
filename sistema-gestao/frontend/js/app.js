@@ -1,8 +1,18 @@
 function carregarClientes(pagina = 1) {
-        $('#tabela-clientes').html('<tr><td colspan="5" class="text-center text-muted py-3">Buscando clientes...</td></tr>');
+        let termoBusca = $('#filtro-busca').val();
+        let dataBusca = $('#filtro-data').val();
+        let urlApi = `http://127.0.0.1:8000/api/clients?page=${pagina}`;
 
+        if (termoBusca) {
+            urlApi += `&search=${encodeURIComponent(termoBusca)}`;
+        }
+        if (dataBusca) {
+            urlApi += `&date=${dataBusca}`;
+        }
+
+        $('#tabela-clientes').html('<tr><td colspan="6" class="text-center text-muted py-3">Buscando clientes...</td></tr>');
         $.ajax({
-            url: `http://127.0.0.1:8000/api/clients?page=${pagina}`, 
+            url: urlApi, 
             method: 'GET',
             success: function(resposta) {
                 $('#tabela-clientes').empty();
@@ -77,6 +87,27 @@ $(document).ready(function() {
         $('#tela-faturas').removeClass('d-none');
         $('#menu-faturas').addClass('active');
         $('#menu-clientes').removeClass('active');
+    });
+
+    let timerDebounce;
+
+    $('#filtro-busca').on('input', function() {
+        
+        clearTimeout(timerDebounce);
+
+        timerDebounce = setTimeout(function() {
+            carregarClientes(1); 
+        }, 500); 
+    });
+
+    $('#filtro-data').on('change', function() {
+        carregarClientes(1);
+    });
+
+    $('#btn-limpar-filtro').on('click', function() {
+        $('#filtro-busca').val('');
+        $('#filtro-data').val('');
+        carregarClientes(1);
     });
 
     $('#paginacao-clientes').on('click', '.btn-mudar-pagina', function(evento) {

@@ -71,8 +71,19 @@
                 <button class="btn btn-primary" id="btn-novo-cliente">+ Novo Cliente</button>
             </div>
             
-            <div class="card shadow-sm">
-                <div class="card-body">
+                <div class="card shadow-sm">
+                        <div class="card-body">
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-2 mb-md-0">
+                                <input type="text" id="filtro-busca" class="form-control" placeholder="Digite para buscar clientes...">
+                            </div>
+                            <div class="col-md-4 mb-2 mb-md-0">
+                                <input type="date" id="filtro-data" class="form-control" title="Filtrar por data de adição">
+                            </div>
+                            <div class="col-md-2">
+                                <button class="btn btn-secondary w-100" id="btn-limpar-filtro">Limpar</button>
+                            </div>
+                        </div>
                     <table class="table table-hover align-middle">
                         <thead class="table-light">
                             <tr>

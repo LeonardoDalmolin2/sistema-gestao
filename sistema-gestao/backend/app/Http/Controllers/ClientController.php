@@ -11,14 +11,28 @@ class ClientController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
-    {
+    public function index(Request $request)
 
-        $userId = Auth::id(); 
+    {
+        $query = \App\Models\Client::query();
+
+        if ($request->filled('search')) {
+            $termo = $request->search;
+
+            $query->where(function($q) use ($termo) {
+                $q->where('name', 'like', "%{$termo}%")
+                  ->orWhere('email', 'like', "%{$termo}%")
+                  ->orWhere('phone', 'like', "%{$termo}%");
+            });
+        }
+
+        if ($request->filled('date')) {
+            $query->whereDate('created_at', $request->date);
+        }
         
-        $clients = \App\Models\Client::paginate(10);
-        
-        return response()->json($clients, 200);
+        $clients = $query->paginate(10);
+        return response()->json($clients);
+
     }
 
     /**
