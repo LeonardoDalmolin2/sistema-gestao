@@ -1,7 +1,99 @@
+const API_BASE = 'http://127.0.0.1:8000/api';
+
+function rotuloStatusFatura(status) {
+    const mapa = { pending: 'Pendente', paid: 'Paga', canceled: 'Cancelada' };
+    return mapa[status] || status;
+}
+
+function formatarMoedaBR(valor) {
+    return Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function formatarDataBR(iso) {
+    if (!iso) return '—';
+    let d = new Date(iso.length === 10 ? iso + 'T12:00:00' : iso);
+    return isNaN(d.getTime()) ? iso : d.toLocaleDateString('pt-BR');
+}
+
+let faturasFiltroClienteId = null;
+let faturasNomeClienteFiltro = null;
+
+function atualizarCabecalhoFaturas() {
+    if (faturasFiltroClienteId === null) {
+        $('#titulo-faturas').text('Minhas Faturas');
+        $('#contexto-faturas-cliente').addClass('d-none').text('');
+        $('#btn-faturas-ver-todas').addClass('d-none');
+    } else {
+        let nome = faturasNomeClienteFiltro || ('Cliente #' + faturasFiltroClienteId);
+        $('#titulo-faturas').text('Faturas do cliente');
+        $('#contexto-faturas-cliente').removeClass('d-none').text(nome);
+        $('#btn-faturas-ver-todas').removeClass('d-none');
+    }
+}
+
+function carregarFaturas() {
+    let url = `${API_BASE}/invoices`;
+    if (faturasFiltroClienteId !== null) {
+        url += `?client_id=${encodeURIComponent(faturasFiltroClienteId)}`;
+    }
+
+    $('#tabela-faturas').html('<tr><td colspan="6" class="text-center text-muted py-3">Carregando faturas...</td></tr>');
+
+    $.ajax({
+        url: url,
+        method: 'GET',
+        success: function(resposta) {
+            $('#tabela-faturas').empty();
+            let listaFaturas = resposta.data ? resposta.data : resposta;
+
+            if (!Array.isArray(listaFaturas) || listaFaturas.length === 0) {
+                $('#tabela-faturas').append('<tr><td colspan="6" class="text-center text-muted py-3">Nenhuma fatura encontrada.</td></tr>');
+                return;
+            }
+
+            listaFaturas.forEach(function(f) {
+                let linha = `
+                    <tr>
+                        <td>${f.id}</td>
+                        <td>${f.client_id}</td>
+                        <td>${formatarMoedaBR(f.amount)}</td>
+                        <td>${rotuloStatusFatura(f.status)}</td>
+                        <td>${formatarDataBR(f.due_date)}</td>
+                        <td class="text-end text-muted small">—</td>
+                    </tr>
+                `;
+                $('#tabela-faturas').append(linha);
+            });
+
+        },
+        error: function(erro) {
+            console.error('Erro ao buscar faturas:', erro);
+            let msg = 'Erro ao carregar faturas.';
+            if (erro.responseJSON && erro.responseJSON.message) {
+                msg = erro.responseJSON.message;
+            }
+            $('#tabela-faturas').html(`<tr><td colspan="6" class="text-center text-danger py-3">${msg}</td></tr>`);
+        }
+    });
+}
+
+function mostrarTelaFaturas(clienteId, nomeCliente) {
+    $('#tela-clientes').addClass('d-none');
+    $('#tela-faturas').removeClass('d-none');
+    $('#menu-faturas').addClass('active');
+    $('#menu-clientes').removeClass('active');
+
+    faturasFiltroClienteId = clienteId === undefined || clienteId === null ? null : Number(clienteId);
+    faturasNomeClienteFiltro = nomeCliente || null;
+
+    atualizarCabecalhoFaturas();
+    carregarFaturas();
+}
+
 function carregarClientes(pagina = 1) {
         let termoBusca = $('#filtro-busca').val();
         let dataBusca = $('#filtro-data').val();
-        let urlApi = `http://127.0.0.1:8000/api/clients?page=${pagina}`;
+        let urlApi = `${API_BASE}/clients?page=${pagina}`;
 
         if (termoBusca) {
             urlApi += `&search=${encodeURIComponent(termoBusca)}`;
@@ -32,7 +124,7 @@ function carregarClientes(pagina = 1) {
                             <td>${cliente.email}</td>
                             <td>${cliente.phone || 'Sem telefone'}</td>
                             <td class="text-end">
-                                <button class="btn btn-sm btn-outline-info btn-ver-faturas" data-id="${cliente.id}">Faturas</button>
+                                <button class="btn btn-sm btn-outline-info btn-ver-faturas" data-id="${cliente.id}" data-name="${encodeURIComponent(cliente.name || '')}">Faturas</button>
                                 <button class="btn btn-sm btn-outline-primary btn-editar-cliente" data-id="${cliente.id}">Editar</button>
                                 <button class="btn btn-sm btn-outline-danger btn-excluir-cliente" data-id="${cliente.id}">Excluir</button>
                             </td>
@@ -83,10 +175,11 @@ $(document).ready(function() {
 
     $('#menu-faturas').on('click', function(evento) {
         evento.preventDefault();
-        $('#tela-clientes').addClass('d-none');
-        $('#tela-faturas').removeClass('d-none');
-        $('#menu-faturas').addClass('active');
-        $('#menu-clientes').removeClass('active');
+        mostrarTelaFaturas(null);
+    });
+
+    $('#btn-faturas-ver-todas').on('click', function() {
+        mostrarTelaFaturas(null);
     });
 
     let timerDebounce;
@@ -118,7 +211,14 @@ $(document).ready(function() {
 
     $('#tabela-clientes').on('click', '.btn-ver-faturas', function() {
         let idDoCliente = $(this).data('id');
-        alert(`Você clicou para ver as faturas do cliente ID: ${idDoCliente}!`);
+        let nomeCodificado = $(this).attr('data-name') || '';
+        let nome = '';
+        try {
+            nome = decodeURIComponent(nomeCodificado);
+        } catch (e) {
+            nome = nomeCodificado;
+        }
+        mostrarTelaFaturas(idDoCliente, nome || null);
     });
 
     $('#tabela-clientes').on('click', '.btn-excluir-cliente', function() {
@@ -131,7 +231,7 @@ $(document).ready(function() {
             $botao.text('Excluindo...').prop('disabled', true);
 
             $.ajax({
-                url: `http://127.0.0.1:8000/api/clients/${idDoCliente}`,
+                url: `${API_BASE}/clients/${idDoCliente}`,
                 method: 'DELETE', 
                 
                 success: function() {
@@ -152,7 +252,7 @@ $(document).ready(function() {
         let idDoCliente = $(this).data('id');
         $('#edit-client-id').val(idDoCliente);
         $.ajax({
-            url: `http://127.0.0.1:8000/api/clients/${idDoCliente}`,
+            url: `${API_BASE}/clients/${idDoCliente}`,
             method: 'GET',
             success: function(resposta) {
                 let cliente = resposta.data ? resposta.data : resposta;
@@ -188,7 +288,7 @@ $(document).ready(function() {
         };
 
         $.ajax({
-            url: `http://127.0.0.1:8000/api/clients/${idDoCliente}`,
+            url: `${API_BASE}/clients/${idDoCliente}`,
             method: 'PUT',
             contentType: 'application/json', 
             data: JSON.stringify(dadosAtualizados),

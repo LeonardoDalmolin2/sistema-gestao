@@ -13,7 +13,6 @@ Route::post('/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
     
-    // O apiResource já cria as 5 rotas (GET, POST, PUT, DELETE) automaticamente!
     Route::apiResource('clients', ClientController::class);
 
     Route::apiResource('invoices', InvoiceController::class);

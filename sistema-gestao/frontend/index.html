@@ -109,9 +109,15 @@
         </section>
 
         <section id="tela-faturas" class="d-none">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>Minhas Faturas</h2>
-                <button class="btn btn-success" id="btn-nova-fatura">+ Nova Fatura</button>
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                <div>
+                    <h2 class="mb-0" id="titulo-faturas">Minhas Faturas</h2>
+                    <p class="text-muted small mb-0 mt-1 d-none" id="contexto-faturas-cliente"></p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary d-none" id="btn-faturas-ver-todas">Todas as faturas</button>
+                    <button class="btn btn-success" id="btn-nova-fatura">+ Nova Fatura</button>
+                </div>
             </div>
             
             <div class="card shadow-sm">

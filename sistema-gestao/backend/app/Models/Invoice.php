@@ -15,4 +15,9 @@ class Invoice extends Model
         'status',
         'due_date'
     ];
+
+    public function client()
+    {
+        return $this->belongsTo(Client::class);
+    }
 }
