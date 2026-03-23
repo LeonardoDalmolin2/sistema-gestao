@@ -14,17 +14,30 @@ class InvoiceController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $userId = Auth::id(); 
-        
-        $clients = Client::where('user_id', $userId)->pluck('id');
+        $userId = Auth::id();
 
-        $invoices = Invoice::whereIn('client_id', $clients)->get();
+        $query = Invoice::whereHas('client', function ($q) use ($userId) {
+            $q->where('user_id', $userId);
+        });
 
-        return response()->json($invoices, 200);
+        if ($request->filled('client_id')) {
+            $clientId = (int) $request->query('client_id');
+
+            $clienteEhDoUsuario = \App\Models\Client::where('id', $clientId)
+                ->where('user_id', $userId)
+                ->exists();
+
+            if (! $clienteEhDoUsuario) {
+                return response()->json(['message' => 'Cliente não encontrado ou acesso negado.'], 403);
+            }
+
+            $query->where('client_id', $clientId);
+        }
+
+        return response()->json($query->paginate(10), 200);
     }
-
     /**
      * Store a newly created resource in storage.
      */
@@ -34,7 +47,7 @@ class InvoiceController extends Controller
             'client_id' => 'required|integer|exists:clients,id',
             'amount'    => 'required|numeric|min:0',
             'status'    => 'required|in:pending,paid,canceled',
-            'due_date'  => 'required|date' 
+            'due_date'  => 'required|date'
         ]);
 
         $client = Client::find($request->client_id);
@@ -63,7 +76,7 @@ class InvoiceController extends Controller
         }
 
         $client = Client::find($invoice->client_id);
-        
+
         if ($client->user_id !== Auth::id()) {
             return response()->json(['message' => 'Acesso negado. Esta fatura não pertence a um cliente seu.'], 403);
         }
@@ -83,7 +96,7 @@ class InvoiceController extends Controller
         }
 
         $client = Client::find($invoice->client_id);
-        
+
         if ($client->user_id !== Auth::id()) {
             return response()->json(['message' => 'Acesso negado. Esta fatura não pertence a você.'], 403);
         }
@@ -92,7 +105,7 @@ class InvoiceController extends Controller
             'client_id' => 'required|integer|exists:clients,id',
             'amount'    => 'required|numeric|min:0',
             'status'    => 'required|in:pending,paid,canceled',
-            'due_date'  => 'required|date' 
+            'due_date'  => 'required|date'
         ]);
 
         if ($request->client_id != $invoice->client_id) {
@@ -122,7 +135,7 @@ class InvoiceController extends Controller
         }
 
         $client = Client::find($invoice->client_id);
-        
+
         if ($client->user_id !== Auth::id()) {
             return response()->json(['message' => 'Acesso negado. Esta fatura não é sua.'], 403);
         }
