@@ -17,27 +17,39 @@ function formatarDataBR(iso) {
 
 let faturasFiltroClienteId = null;
 let faturasNomeClienteFiltro = null;
+let paginaAtualFaturas = 1;
+
+function formatarTelefone(valor) {
+    let digitos = (valor || '').replace(/\D/g, '').slice(0, 11);
+    if (digitos.length <= 2) return digitos;
+    if (digitos.length <= 7) return `(${digitos.slice(0, 2)})${digitos.slice(2)}`;
+    return `(${digitos.slice(0, 2)})${digitos.slice(2, 7)}-${digitos.slice(7)}`;
+}
 
 function atualizarCabecalhoFaturas() {
     if (faturasFiltroClienteId === null) {
         $('#titulo-faturas').text('Minhas Faturas');
         $('#contexto-faturas-cliente').addClass('d-none').text('');
         $('#btn-faturas-ver-todas').addClass('d-none');
+        $('#btn-nova-fatura').addClass('d-none');
     } else {
         let nome = faturasNomeClienteFiltro || ('Cliente #' + faturasFiltroClienteId);
         $('#titulo-faturas').text('Faturas do cliente');
         $('#contexto-faturas-cliente').removeClass('d-none').text(nome);
         $('#btn-faturas-ver-todas').removeClass('d-none');
+        $('#btn-nova-fatura').removeClass('d-none');
     }
 }
 
-function carregarFaturas() {
-    let url = `${API_BASE}/invoices`;
+function carregarFaturas(pagina = 1) {
+    paginaAtualFaturas = pagina;
+    let url = `${API_BASE}/invoices?page=${pagina}`;
     if (faturasFiltroClienteId !== null) {
-        url += `?client_id=${encodeURIComponent(faturasFiltroClienteId)}`;
+        url += `&client_id=${encodeURIComponent(faturasFiltroClienteId)}`;
     }
 
     $('#tabela-faturas').html('<tr><td colspan="6" class="text-center text-muted py-3">Carregando faturas...</td></tr>');
+    $('#paginacao-faturas').empty();
 
     $.ajax({
         url: url,
@@ -52,10 +64,11 @@ function carregarFaturas() {
             }
 
             listaFaturas.forEach(function(f) {
+                let nomeCliente = (f.client && f.client.name) ? f.client.name : `Cliente #${f.client_id}`;
                 let linha = `
                     <tr>
                         <td>${f.id}</td>
-                        <td>${f.client_id}</td>
+                        <td>${nomeCliente}</td>
                         <td>${formatarMoedaBR(f.amount)}</td>
                         <td>${rotuloStatusFatura(f.status)}</td>
                         <td>${formatarDataBR(f.due_date)}</td>
@@ -64,6 +77,27 @@ function carregarFaturas() {
                 `;
                 $('#tabela-faturas').append(linha);
             });
+
+            if (resposta.links && Array.isArray(resposta.links)) {
+                let $paginacao = $('#paginacao-faturas');
+                $paginacao.empty();
+
+                resposta.links.forEach(function(link) {
+                    if (link.url === null) {
+                        $paginacao.append(`<li class="page-item disabled"><a class="page-link" href="#">${link.label}</a></li>`);
+                    } else {
+                        let ativo = link.active ? 'active' : '';
+                        let numeroPagina = new URL(link.url).searchParams.get('page');
+                        $paginacao.append(`
+                            <li class="page-item ${ativo}">
+                                <a class="page-link btn-mudar-pagina-faturas" href="#" data-page="${numeroPagina}">
+                                    ${link.label}
+                                </a>
+                            </li>
+                        `);
+                    }
+                });
+            }
 
         },
         error: function(erro) {
@@ -87,7 +121,7 @@ function mostrarTelaFaturas(clienteId, nomeCliente) {
     faturasNomeClienteFiltro = nomeCliente || null;
 
     atualizarCabecalhoFaturas();
-    carregarFaturas();
+    carregarFaturas(1);
 }
 
 function carregarClientes(pagina = 1) {
@@ -182,6 +216,29 @@ $(document).ready(function() {
         mostrarTelaFaturas(null);
     });
 
+    $('#btn-novo-cliente').on('click', function() {
+        $('#formNovoCliente')[0].reset();
+        let modalEl = document.getElementById('modalNovoCliente');
+        let modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    });
+
+    $('#btn-nova-fatura').on('click', function() {
+        if (faturasFiltroClienteId === null) {
+            return;
+        }
+        $('#formNovaFatura')[0].reset();
+        $('#fatura-client-id').val(faturasFiltroClienteId);
+        $('#fatura-client-name').val(faturasNomeClienteFiltro || (`Cliente #${faturasFiltroClienteId}`));
+        let modalEl = document.getElementById('modalNovaFatura');
+        let modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    });
+
+    $('#novo-phone, #edit-phone').on('input', function() {
+        $(this).val(formatarTelefone($(this).val()));
+    });
+
     let timerDebounce;
 
     $('#filtro-busca').on('input', function() {
@@ -207,6 +264,12 @@ $(document).ready(function() {
         evento.preventDefault();
         let paginaClicada = $(this).data('page');
         carregarClientes(paginaClicada);
+    });
+
+    $('#paginacao-faturas').on('click', '.btn-mudar-pagina-faturas', function(evento) {
+        evento.preventDefault();
+        let paginaClicada = Number($(this).data('page')) || 1;
+        carregarFaturas(paginaClicada);
     });
 
     $('#tabela-clientes').on('click', '.btn-ver-faturas', function() {
@@ -258,7 +321,7 @@ $(document).ready(function() {
                 let cliente = resposta.data ? resposta.data : resposta;
                 $('#edit-name').val(cliente.name);
                 $('#edit-email').val(cliente.email);
-                $('#edit-phone').val(cliente.phone);
+                $('#edit-phone').val(formatarTelefone(cliente.phone));
 
                 let modalEl = document.getElementById('modalEditarCliente');
                 let modal = bootstrap.Modal.getOrCreateInstance(modalEl);
@@ -287,6 +350,11 @@ $(document).ready(function() {
             phone: $('#edit-phone').val()
         };
 
+        if (!/^\(\d{2}\)\d{5}-\d{4}$/.test(dadosAtualizados.phone)) {
+            alert('Telefone inválido. Use o formato (xx)xxxxx-xxxx.');
+            return;
+        }
+
         $.ajax({
             url: `${API_BASE}/clients/${idDoCliente}`,
             method: 'PUT',
@@ -313,6 +381,88 @@ $(document).ready(function() {
                     console.error("Erro desconhecido:", erro);
                     alert("Erro ao atualizar cliente. Olhe o F12.");
                 }
+            }
+        });
+    });
+
+    $('#formNovoCliente').on('submit', function(evento) {
+        evento.preventDefault();
+
+        let payload = {
+            name: $('#novo-name').val(),
+            email: $('#novo-email').val(),
+            phone: $('#novo-phone').val()
+        };
+
+        if (!/^\(\d{2}\)\d{5}-\d{4}$/.test(payload.phone)) {
+            alert('Telefone inválido. Use o formato (xx)xxxxx-xxxx.');
+            return;
+        }
+
+        $.ajax({
+            url: `${API_BASE}/clients`,
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(payload),
+            success: function() {
+                let modalEl = document.getElementById('modalNovoCliente');
+                let modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+                carregarClientes(1);
+            },
+            error: function(erro) {
+                if (erro.status === 422 && erro.responseJSON && erro.responseJSON.errors) {
+                    let erros = erro.responseJSON.errors;
+                    let mensagem = "Verifique os campos:\n";
+                    for (let campo in erros) {
+                        mensagem += `- ${erros[campo][0]}\n`;
+                    }
+                    alert(mensagem);
+                    return;
+                }
+                alert('Erro ao cadastrar cliente.');
+                console.error(erro);
+            }
+        });
+    });
+
+    $('#formNovaFatura').on('submit', function(evento) {
+        evento.preventDefault();
+
+        let payload = {
+            client_id: Number($('#fatura-client-id').val()),
+            amount: Number($('#fatura-amount').val()),
+            status: $('#fatura-status').val(),
+            due_date: $('#fatura-due-date').val()
+        };
+
+        $.ajax({
+            url: `${API_BASE}/invoices`,
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(payload),
+            success: function() {
+                let modalEl = document.getElementById('modalNovaFatura');
+                let modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+                carregarFaturas(paginaAtualFaturas);
+            },
+            error: function(erro) {
+                if (erro.status === 422 && erro.responseJSON && erro.responseJSON.errors) {
+                    let erros = erro.responseJSON.errors;
+                    let mensagem = "Verifique os campos:\n";
+                    for (let campo in erros) {
+                        mensagem += `- ${erros[campo][0]}\n`;
+                    }
+                    alert(mensagem);
+                    return;
+                }
+                if (erro.responseJSON && erro.responseJSON.message) {
+                    alert(erro.responseJSON.message);
+                } else {
+                    alert('Erro ao cadastrar fatura.');
+                }
+                console.error(erro);
             }
         });
     });

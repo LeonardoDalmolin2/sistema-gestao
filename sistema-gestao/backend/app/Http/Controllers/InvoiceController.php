@@ -18,7 +18,7 @@ class InvoiceController extends Controller
     {
         $userId = Auth::id();
 
-        $query = Invoice::whereHas('client', function ($q) use ($userId) {
+        $query = Invoice::with('client:id,name')->whereHas('client', function ($q) use ($userId) {
             $q->where('user_id', $userId);
         });
 
