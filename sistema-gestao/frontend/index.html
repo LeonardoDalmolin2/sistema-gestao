@@ -125,6 +125,43 @@
             </div>
         </div>
     </div>
+    <div class="modal fade" id="modalEditarFatura" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar Fatura</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formEditarFatura">
+                        <input type="hidden" id="edit-fatura-id">
+                        <input type="hidden" id="edit-fatura-client-id">
+                        <div class="mb-3">
+                            <label for="edit-fatura-client-name" class="form-label">Cliente</label>
+                            <input type="text" class="form-control" id="edit-fatura-client-name" disabled>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-fatura-amount" class="form-label">Valor</label>
+                            <input type="number" min="0" step="0.01" class="form-control" id="edit-fatura-amount" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-fatura-status" class="form-label">Status</label>
+                            <select class="form-select" id="edit-fatura-status" required>
+                                <option value="pending">Pendente</option>
+                                <option value="paid">Paga</option>
+                                <option value="canceled">Cancelada</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-fatura-due-date" class="form-label">Vencimento</label>
+                            <input type="date" class="form-control" id="edit-fatura-due-date" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Salvar alterações</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <main class="container mt-5">
         
@@ -185,6 +222,17 @@
             
             <div class="card shadow-sm">
                 <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-2 mb-md-0">
+                            <input type="text" id="filtro-busca-faturas" class="form-control" placeholder="Digite para buscar faturas...">
+                        </div>
+                        <div class="col-md-4 mb-2 mb-md-0">
+                            <input type="date" id="filtro-data-faturas" class="form-control" title="Filtrar por data de vencimento">
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-secondary w-100" id="btn-limpar-filtro-faturas">Limpar</button>
+                        </div>
+                    </div>
                     <table class="table table-hover align-middle">
                         <thead class="table-light">
                             <tr>

@@ -17,6 +17,13 @@ let faturasFiltroClienteId = null;
 let faturasNomeClienteFiltro = null;
 let paginaAtualFaturas = 1;
 
+function obterFiltrosFaturas() {
+    return {
+        search: ($('#filtro-busca-faturas').val() || '').trim(),
+        date: $('#filtro-data-faturas').val() || ''
+    };
+}
+
 function atualizarCabecalhoFaturas() {
     if (faturasFiltroClienteId === null) {
         $('#titulo-faturas').text('Minhas Faturas');
@@ -35,8 +42,16 @@ function atualizarCabecalhoFaturas() {
 function carregarFaturas(pagina = 1) {
     paginaAtualFaturas = pagina;
     let url = `${API_BASE}/invoices?page=${pagina}`;
+    let filtros = obterFiltrosFaturas();
+
     if (faturasFiltroClienteId !== null) {
         url += `&client_id=${encodeURIComponent(faturasFiltroClienteId)}`;
+    }
+    if (filtros.search) {
+        url += `&search=${encodeURIComponent(filtros.search)}`;
+    }
+    if (filtros.date) {
+        url += `&date=${encodeURIComponent(filtros.date)}`;
     }
 
     $('#tabela-faturas').html('<tr><td colspan="6" class="text-center text-muted py-3">Carregando faturas...</td></tr>');
@@ -63,7 +78,10 @@ function carregarFaturas(pagina = 1) {
                         <td>${formatarMoedaBR(f.amount)}</td>
                         <td>${rotuloStatusFatura(f.status)}</td>
                         <td>${formatarDataBR(f.due_date)}</td>
-                        <td class="text-end text-muted small">—</td>
+                        <td class="text-end">
+                            <button type="button" class="btn btn-sm btn-outline-primary btn-editar-fatura" data-id="${f.id}">Editar</button>
+                            <button type="button" class="btn btn-sm btn-outline-danger btn-excluir-fatura" data-id="${f.id}">Excluir</button>
+                        </td>
                     </tr>
                 `;
                 $('#tabela-faturas').append(linha);
@@ -180,5 +198,98 @@ $(document).ready(function() {
         });
     });
 
+    $('#tabela-faturas').on('click', '.btn-excluir-fatura', function() {
+        let idFatura = $(this).data('id');
+        if (!confirm(`Excluir a fatura #${idFatura}? Esta ação não pode ser desfeita.`)) {
+            return;
+        }
+        let $botao = $(this);
+        $botao.prop('disabled', true).text('...');
+        $.ajax({
+            url: `${API_BASE}/invoices/${idFatura}`,
+            method: 'DELETE',
+            success: function() {
+                carregarFaturas(paginaAtualFaturas);
+            },
+            error: function(erro) {
+                let msg = 'Erro ao excluir fatura.';
+                if (erro.responseJSON && erro.responseJSON.message) {
+                    msg = erro.responseJSON.message;
+                }
+                alert(msg);
+                console.error(erro);
+                $botao.prop('disabled', false).text('Excluir');
+            }
+        });
+    });
+
+    $('#tabela-faturas').on('click', '.btn-editar-fatura', function() {
+        let idFatura = $(this).data('id');
+        $.ajax({
+            url: `${API_BASE}/invoices/${idFatura}`,
+            method: 'GET',
+            success: function(resposta) {
+                let f = resposta.data ? resposta.data : resposta;
+                $('#edit-fatura-id').val(f.id);
+                $('#edit-fatura-client-id').val(f.client_id);
+                let nomeCliente = (f.client && f.client.name) ? f.client.name : `Cliente #${f.client_id}`;
+                $('#edit-fatura-client-name').val(nomeCliente);
+                $('#edit-fatura-amount').val(f.amount);
+                $('#edit-fatura-status').val(f.status);
+                let venc = f.due_date || '';
+                if (venc.length > 10) {
+                    venc = venc.slice(0, 10);
+                }
+                $('#edit-fatura-due-date').val(venc);
+                let modalEl = document.getElementById('modalEditarFatura');
+                let modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modal.show();
+            },
+            error: function(erro) {
+                alert('Erro ao carregar fatura.');
+                console.error(erro);
+            }
+        });
+    });
+
+    $('#formEditarFatura').on('submit', function(evento) {
+        evento.preventDefault();
+        let idFatura = $('#edit-fatura-id').val();
+        let payload = {
+            client_id: Number($('#edit-fatura-client-id').val()),
+            amount: Number($('#edit-fatura-amount').val()),
+            status: $('#edit-fatura-status').val(),
+            due_date: $('#edit-fatura-due-date').val()
+        };
+        $.ajax({
+            url: `${API_BASE}/invoices/${idFatura}`,
+            method: 'PUT',
+            contentType: 'application/json',
+            data: JSON.stringify(payload),
+            success: function() {
+                let modalEl = document.getElementById('modalEditarFatura');
+                let modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+                carregarFaturas(paginaAtualFaturas);
+            },
+            error: function(erro) {
+                if (erro.status === 422 && erro.responseJSON && erro.responseJSON.errors) {
+                    let erros = erro.responseJSON.errors;
+                    let mensagem = 'Verifique os campos:\n';
+                    for (let campo in erros) {
+                        mensagem += `- ${erros[campo][0]}\n`;
+                    }
+                    alert(mensagem);
+                    return;
+                }
+                if (erro.responseJSON && erro.responseJSON.message) {
+                    alert(erro.responseJSON.message);
+                } else {
+                    alert('Erro ao atualizar fatura.');
+                }
+                console.error(erro);
+            }
+        });
+    });
 
 });

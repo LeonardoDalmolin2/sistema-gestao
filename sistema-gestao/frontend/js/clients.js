@@ -109,27 +109,6 @@ $(document).ready(function() {
         $(this).val(formatarTelefone($(this).val()));
     });
 
-    let timerDebounce;
-
-    $('#filtro-busca').on('input', function() {
-        
-        clearTimeout(timerDebounce);
-
-        timerDebounce = setTimeout(function() {
-            carregarClientes(1); 
-        }, 500); 
-    });
-
-    $('#filtro-data').on('change', function() {
-        carregarClientes(1);
-    });
-
-    $('#btn-limpar-filtro').on('click', function() {
-        $('#filtro-busca').val('');
-        $('#filtro-data').val('');
-        carregarClientes(1);
-    });
-
     $('#paginacao-clientes').on('click', '.btn-mudar-pagina', function(evento) {
         evento.preventDefault();
         let paginaClicada = $(this).data('page');
