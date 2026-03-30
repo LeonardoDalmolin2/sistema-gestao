@@ -17,7 +17,7 @@ function carregarClientes(pagina = 1) {
         urlApi += `&date=${dataBusca}`;
     }
 
-    $('#tabela-clientes').html('<tr><td colspan="6" class="text-center text-muted py-3">Buscando clientes...</td></tr>');
+    $('#tabela-clientes').html('<tr><td colspan="5" class="text-center text-muted py-3">Buscando clientes...</td></tr>');
     $.ajax({
         url: urlApi, 
         method: 'GET',
