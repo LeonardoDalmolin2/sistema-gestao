@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,13 +8,10 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
-    <script src="js/auth.js"></script>
-    <script src="js/app.js"></script>
 </head>
-<body class="bg-light">
-    
+<body class="app-shell">
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+    <nav class="navbar navbar-expand-lg navbar-dark app-navbar">
         <div class="container">
             <a class="navbar-brand fw-bold" href="#">GestãoPro</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menuPrincipal">
@@ -34,7 +31,7 @@
         </div>
     </nav>
     <div class="modal fade" id="modalEditarCliente" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Editar Cliente</h5>
@@ -63,7 +60,7 @@
         </div>
     </div>
     <div class="modal fade" id="modalNovoCliente" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Novo Cliente</h5>
@@ -90,7 +87,7 @@
         </div>
     </div>
     <div class="modal fade" id="modalNovaFatura" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Nova Fatura</h5>
@@ -125,44 +122,83 @@
             </div>
         </div>
     </div>
+    <div class="modal fade" id="modalEditarFatura" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar Fatura</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formEditarFatura">
+                        <input type="hidden" id="edit-fatura-id">
+                        <input type="hidden" id="edit-fatura-client-id">
+                        <div class="mb-3">
+                            <label for="edit-fatura-client-name" class="form-label">Cliente</label>
+                            <input type="text" class="form-control" id="edit-fatura-client-name" disabled>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-fatura-amount" class="form-label">Valor</label>
+                            <input type="number" min="0" step="0.01" class="form-control" id="edit-fatura-amount" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-fatura-status" class="form-label">Status</label>
+                            <select class="form-select" id="edit-fatura-status" required>
+                                <option value="pending">Pendente</option>
+                                <option value="paid">Paga</option>
+                                <option value="canceled">Cancelada</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-fatura-due-date" class="form-label">Vencimento</label>
+                            <input type="date" class="form-control" id="edit-fatura-due-date" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Salvar alterações</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <main class="container mt-5">
+    <main class="container app-main">
         
         <section id="tela-clientes">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>Meus Clientes</h2>
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                <h2 class="app-page-title mb-0">Meus Clientes</h2>
                 <button class="btn btn-primary" id="btn-novo-cliente">+ Novo Cliente</button>
             </div>
             
-                <div class="card shadow-sm">
-                        <div class="card-body">
-                        <div class="row mb-4">
-                            <div class="col-md-6 mb-2 mb-md-0">
-                                <input type="text" id="filtro-busca" class="form-control" placeholder="Digite para buscar clientes...">
-                            </div>
-                            <div class="col-md-4 mb-2 mb-md-0">
-                                <input type="date" id="filtro-data" class="form-control" title="Filtrar por data de adição">
-                            </div>
-                            <div class="col-md-2">
-                                <button class="btn btn-secondary w-100" id="btn-limpar-filtro">Limpar</button>
-                            </div>
+            <div class="card app-card">
+                <div class="card-body">
+                    <div class="row mb-4 app-filter">
+                        <div class="col-md-6 mb-2 mb-md-0">
+                            <input type="text" id="filtro-busca" class="form-control" placeholder="Digite para buscar clientes...">
                         </div>
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th>ID</th>
-                                <th>Nome</th>
-                                <th>E-mail</th>
-                                <th>Telefone</th>
-                                <th class="text-end">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabela-clientes">
-                            <tr>
-                                <td colspan="5" class="text-center text-muted py-3">Carregando clientes...</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                        <div class="col-md-4 mb-2 mb-md-0">
+                            <input type="date" id="filtro-data" class="form-control" title="Filtrar por data de adição">
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-secondary w-100" id="btn-limpar-filtro">Limpar</button>
+                        </div>
+                    </div>
+                    <div class="app-table-wrap">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nome</th>
+                                    <th>E-mail</th>
+                                    <th>Telefone</th>
+                                    <th class="text-end">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabela-clientes">
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-3">Carregando clientes...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                     <nav aria-label="Navegação de clientes" class="mt-4">
                         <ul class="pagination justify-content-center" id="paginacao-clientes">
                             </ul>
@@ -172,36 +208,49 @@
         </section>
 
         <section id="tela-faturas" class="d-none">
-            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
                 <div>
-                    <h2 class="mb-0" id="titulo-faturas">Minhas Faturas</h2>
-                    <p class="text-muted small mb-0 mt-1 d-none" id="contexto-faturas-cliente"></p>
+                    <h2 class="app-page-title mb-0" id="titulo-faturas">Minhas Faturas</h2>
+                    <p class="app-page-sub small mb-0 mt-1 d-none" id="contexto-faturas-cliente"></p>
                 </div>
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 flex-wrap">
                     <button type="button" class="btn btn-outline-secondary d-none" id="btn-faturas-ver-todas">Todas as faturas</button>
                     <button class="btn btn-success" id="btn-nova-fatura">+ Nova Fatura</button>
                 </div>
             </div>
             
-            <div class="card shadow-sm">
+            <div class="card app-card">
                 <div class="card-body">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th>ID</th>
-                                <th>Cliente</th>
-                                <th>Valor (R$)</th>
-                                <th>Status</th>
-                                <th>Vencimento</th>
-                                <th class="text-end">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabela-faturas">
-                            <tr>
-                                <td colspan="6" class="text-center text-muted py-3">Carregando faturas...</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="row mb-4 app-filter">
+                        <div class="col-md-6 mb-2 mb-md-0">
+                            <input type="text" id="filtro-busca-faturas" class="form-control" placeholder="Digite para buscar faturas...">
+                        </div>
+                        <div class="col-md-4 mb-2 mb-md-0">
+                            <input type="date" id="filtro-data-faturas" class="form-control" title="Filtrar por data de vencimento">
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-secondary w-100" id="btn-limpar-filtro-faturas">Limpar</button>
+                        </div>
+                    </div>
+                    <div class="app-table-wrap">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Cliente</th>
+                                    <th>Valor (R$)</th>
+                                    <th>Status</th>
+                                    <th>Vencimento</th>
+                                    <th class="text-end">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabela-faturas">
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-3">Carregando faturas...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                     <nav aria-label="Navegação de faturas" class="mt-4">
                         <ul class="pagination justify-content-center" id="paginacao-faturas"></ul>
                     </nav>
@@ -210,6 +259,9 @@
         </section>
 
     </main>
-    
+    <script src="js/auth.js"></script>
+    <script src="js/clients.js"></script>
+    <script src="js/invoices.js"></script>
+    <script src="js/app.js"></script>
     </body>
 </html>

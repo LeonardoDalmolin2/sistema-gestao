@@ -36,6 +36,26 @@ class InvoiceController extends Controller
             $query->where('client_id', $clientId);
         }
 
+        if ($request->filled('search')) {
+            $search = trim((string) $request->query('search'));
+
+            $query->where(function ($q) use ($search) {
+                if (is_numeric($search)) {
+                    $q->orWhere('id', (int) $search);
+                }
+
+                $q->orWhere('status', 'like', "%{$search}%")
+                    ->orWhereRaw('CAST(amount AS CHAR) LIKE ?', ["%{$search}%"])
+                    ->orWhereHas('client', function ($clientQuery) use ($search) {
+                        $clientQuery->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        if ($request->filled('date')) {
+            $query->whereDate('due_date', $request->query('date'));
+        }
+
         return response()->json($query->paginate(10), 200);
     }
     /**
@@ -69,7 +89,7 @@ class InvoiceController extends Controller
      */
     public function show(string $id)
     {
-        $invoice = Invoice::find($id);
+        $invoice = Invoice::with('client:id,name')->find($id);
 
         if (!$invoice) {
             return response()->json(['message' => 'Fatura não encontrada.'], 404);
